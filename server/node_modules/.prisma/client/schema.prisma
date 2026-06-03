@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  nama          String
+  email         String    @unique
+  noHp          String
+  password      String
+  role          Role      @default(PELANGGAN)
+  avatar        String?
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  queues        Queue[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  PELANGGAN
+}
+
+enum QueueStatus {
+  MENUNGGU
+  PROSES
+  SELESAI
+  BATAL
+}
+
+model Queue {
+  id             String      @id @default(cuid())
+  nomorAntrian   Int
+  userId         String      @map("user_id")
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kategoriServis String      @map("kategori_servis")
+  merkMotor      String      @map("merk_motor")
+  platNomor      String      @map("plat_nomor")
+  keluhan        String?
+  status         QueueStatus @default(MENUNGGU)
+  qrToken        String      @unique @default(uuid()) @map("qr_token")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@map("queues")
+}
+
+model CatalogItem {
+  id        String   @id @default(cuid())
+  nama      String
+  kategori  String
+  merk      String?
+  harga     Int
+  stok      Int      @default(0)
+  satuan    String   @default("pcs")
+  deskripsi String?
+  gambar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("catalog_items")
+}
