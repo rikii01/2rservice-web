@@ -22,7 +22,7 @@ import TheFooter from '@/components/TheFooter.vue'
 
     <!-- Floating WhatsApp Button -->
     <a
-      href="https://wa.me/6281234567890"
+      href="https://wa.me/6282369688220"
       target="_blank"
       rel="noopener noreferrer"
       class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-green-500/30 hover:shadow-green-500/50 hover:scale-110 active:scale-95 transition-all duration-300"
