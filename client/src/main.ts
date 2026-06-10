@@ -10,6 +10,7 @@ import DashboardPage from './views/DashboardPage.vue'
 import CatalogPage from './views/CatalogPage.vue'
 import QueuePage from './views/QueuePage.vue'
 import AdminQueuePage from './views/AdminQueuePage.vue'
+import AdminFinancePage from './views/AdminFinancePage.vue'
 import { useAuth } from './composables/useAuth'
 
 const router = createRouter({
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/catalog', component: CatalogPage, name: 'catalog' },
     { path: '/queue', component: QueuePage, name: 'queue' },
     { path: '/admin/queues', component: AdminQueuePage, name: 'admin-queues' },
+    { path: '/admin/finance', component: AdminFinancePage, name: 'admin-finance' },
   ],
   scrollBehavior(to) {
     if (to.hash) {
@@ -34,14 +36,14 @@ const router = createRouter({
 // Navigation Guard
 router.beforeEach((to, from, next) => {
   const { isAuthenticated, isAdmin } = useAuth()
-  const protectedRoutes = ['dashboard', 'catalog', 'queue', 'admin-queues']
+  const protectedRoutes = ['dashboard', 'catalog', 'queue', 'admin-queues', 'admin-finance']
 
   if (protectedRoutes.includes(to.name as string) && !isAuthenticated.value) {
     next({ name: 'login' })
   } else if ((to.name === 'login' || to.name === 'register') && isAuthenticated.value) {
     next({ name: 'dashboard' })
-  } else if (to.name === 'admin-queues' && !isAdmin.value) {
-    next({ name: 'dashboard' }) // Redirect customers away from admin panel
+  } else if ((to.name === 'admin-queues' || to.name === 'admin-finance') && !isAdmin.value) {
+    next({ name: 'dashboard' })
   } else {
     next()
   }

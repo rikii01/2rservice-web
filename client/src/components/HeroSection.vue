@@ -1,12 +1,74 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 const visible = ref(false);
 
+// ─── Queue live data ───────────────────────────────────────────
+const API_URL = 'http://localhost:3000/api';
+
+const totalWaiting = ref<number | null>(null);
+const currentServingNumber = ref<number | null>(null);
+const estimasiMenit = ref<number | null>(null);
+const mekanikTersedia = ref(2);
+const queueLoading = ref(true);
+
+async function fetchPublicStatus() {
+  try {
+    const res = await fetch(`${API_URL}/queue/public-status`);
+    if (res.ok) {
+      const data = await res.json();
+      totalWaiting.value = data.totalWaiting;
+      currentServingNumber.value = data.currentServingNumber;
+      estimasiMenit.value = data.estimasiMenit;
+      mekanikTersedia.value = data.mekanikTersedia ?? 2;
+    }
+  } catch (e) {
+    // Server unreachable — keep last values or show fallback
+  } finally {
+    queueLoading.value = false;
+  }
+}
+
+const queueStats = computed(() => [
+  {
+    label: 'Antrian Menunggu',
+    value: queueLoading.value
+      ? '...'
+      : totalWaiting.value !== null
+        ? `${totalWaiting.value} antrian`
+        : '-',
+    color: 'text-orange-400',
+  },
+  {
+    label: 'Estimasi Tunggu',
+    value: queueLoading.value
+      ? '...'
+      : estimasiMenit.value !== null
+        ? estimasiMenit.value === 0
+          ? 'Langsung'
+          : `± ${estimasiMenit.value} menit`
+        : '-',
+    color: 'text-green-400',
+  },
+  {
+    label: 'Mekanik Tersedia',
+    value: `${mekanikTersedia.value} orang`,
+    color: 'text-blue-400',
+  },
+]);
+
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
   setTimeout(() => (visible.value = true), 100);
+  fetchPublicStatus();
+  refreshInterval = setInterval(fetchPublicStatus, 30_000);
+});
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval);
 });
 
 function scrollTo(href: string) {
@@ -188,33 +250,21 @@ function goToLogin() {
                 Ambil nomor antrian digital tanpa perlu menunggu lama di bengkel
               </p>
 
-              <!-- Queue Status -->
+              <!-- Queue Status (live data) -->
               <div class="space-y-3">
                 <div
-                  v-for="item in [
-                    {
-                      label: 'Antrian Saat Ini',
-                      value: 'No. 14',
-                      color: 'text-orange-400',
-                    },
-                    {
-                      label: 'Estimasi Tunggu',
-                      value: '± 25 menit',
-                      color: 'text-green-400',
-                    },
-                    {
-                      label: 'Mekanik Tersedia',
-                      value: '3 orang',
-                      color: 'text-blue-400',
-                    },
-                  ]"
+                  v-for="item in queueStats"
                   :key="item.label"
                   class="flex items-center justify-between px-4 py-3 bg-white/3 rounded-xl border border-white/5"
                 >
                   <span class="text-gray-400 text-sm">{{ item.label }}</span>
-                  <span :class="['font-bold text-sm', item.color]">{{
-                    item.value
-                  }}</span>
+                  <span
+                    :class="[
+                      'font-bold text-sm transition-all duration-300',
+                      item.color,
+                      queueLoading ? 'opacity-40 animate-pulse' : 'opacity-100',
+                    ]"
+                  >{{ item.value }}</span>
                 </div>
               </div>
 

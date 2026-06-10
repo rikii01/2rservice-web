@@ -7,7 +7,53 @@ import type { Request, Response } from 'express'
 
 const router = Router()
 
-// All queue routes require authentication
+// GET /api/queue/public-status — Public endpoint for landing page queue display (no auth needed)
+router.get('/public-status', async (req: Request, res: Response) => {
+  try {
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date()
+    endOfDay.setHours(23, 59, 59, 999)
+
+    const todayFilter = {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    }
+
+    // Total antrian hari ini (semua status)
+    const totalToday = await prisma.queue.count({ where: todayFilter })
+
+    // Antrian yang sedang dilayani (PROSES) — ambil nomor terkecil
+    const currentServing = await prisma.queue.findFirst({
+      where: { ...todayFilter, status: 'PROSES' },
+      orderBy: { nomorAntrian: 'asc' },
+      select: { nomorAntrian: true },
+    })
+
+    // Total antrian masih menunggu
+    const totalWaiting = await prisma.queue.count({
+      where: { ...todayFilter, status: 'MENUNGGU' },
+    })
+
+    // Estimasi tunggu: 15 menit per antrian yang menunggu (rough estimate)
+    const estimasiMenit = totalWaiting * 15
+
+    res.json({
+      totalToday,
+      currentServingNumber: currentServing ? currentServing.nomorAntrian : null,
+      totalWaiting,
+      estimasiMenit,
+      mekanikTersedia: 2, // fixed
+    })
+  } catch (error) {
+    console.error('Public status error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan server.' })
+  }
+})
+
+// All queue routes below require authentication
 router.use(authMiddleware)
 
 // POST /api/queue — Book a new queue (Pelanggan only)

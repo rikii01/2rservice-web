@@ -30,7 +30,7 @@ function scrollTo(href: string) {
           </p>
           <div class="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl w-fit">
             <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span class="text-green-400 text-xs font-medium">Buka Sekarang · 08.00 – 17.00</span>
+            <span class="text-green-400 text-xs font-medium">Buka Pada · 08.00 – 17.00</span>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ function scrollTo(href: string) {
           &copy; {{ new Date().getFullYear() }} 2R Service. Semua hak dilindungi.
         </p>
         <p class="text-gray-700 text-xs">
-          Dibuat dengan ❤️ untuk pelanggan kami
+          Dibuat untuk pelanggan kami
         </p>
       </div>
     </div>

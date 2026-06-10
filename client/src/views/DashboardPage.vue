@@ -3,7 +3,12 @@ import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useQueue } from '@/composables/useQueue'
+import { useFinance } from '@/composables/useFinance'
 import DashboardLayout from '@/components/DashboardLayout.vue'
+import { Bar } from 'vue-chartjs'
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const router = useRouter()
 const { user, isAuthenticated, isAdmin, fetchMe } = useAuth()
@@ -16,6 +21,7 @@ const {
   fetchHistory,
   fetchAdminQueues
 } = useQueue()
+const { summary, fetchSummary } = useFinance()
 
 onMounted(async () => {
   if (!isAuthenticated.value) {
@@ -26,8 +32,12 @@ onMounted(async () => {
   
   if (isAdmin.value) {
     // Admin: Fetch today's queues for metrics
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = new Date().toISOString().split('T')[0] as string
     await fetchAdminQueues(todayStr)
+    
+    // Fetch finance summary for current month
+    const firstDay = todayStr.substring(0, 7) + '-01'
+    await fetchSummary(firstDay, todayStr)
   } else {
     // Customer: Fetch active queue and history
     await fetchActiveQueue()
@@ -60,6 +70,71 @@ function formatDate(dateStr: string) {
 
 function formatQueueNumber(num: number) {
   return `A-${String(num).padStart(2, '0')}`
+}
+
+// Chart Configuration
+const chartData = computed(() => {
+  if (!summary.value) return { labels: [], datasets: [] }
+  const s = summary.value
+  return {
+    labels: ['Ongkos Servis', 'Sparepart/Oli'],
+    datasets: [
+      {
+        label: 'Pendapatan (Rp)',
+        backgroundColor: ['rgba(249, 115, 22, 0.8)', 'rgba(59, 130, 246, 0.8)'],
+        hoverBackgroundColor: ['#f97316', '#3b82f6'],
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 40,
+        data: [s.totalOngkos, s.totalSparepart]
+      }
+    ]
+  }
+})
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#111111',
+      titleColor: '#9ca3af',
+      bodyColor: '#ffffff',
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1,
+      padding: 10,
+      displayColors: false,
+      callbacks: {
+        label: function(context: any) {
+          let value = context.raw || 0;
+          return 'Rp ' + value.toLocaleString('id-ID');
+        }
+      }
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      grid: { display: false },
+      border: { display: false },
+      ticks: { 
+        color: '#6b7280',
+        font: { size: 11 },
+        callback: function(value: any) {
+          if (value === 0) return '0';
+          if (value >= 1000000) return (value / 1000000) + 'M';
+          if (value >= 1000) return (value / 1000) + 'K';
+          return value;
+        }
+      }
+    },
+    x: {
+      grid: { display: false },
+      border: { display: false },
+      ticks: { color: '#9ca3af', font: { size: 12, weight: 500 } }
+    }
+  }
 }
 </script>
 
@@ -211,6 +286,26 @@ function formatQueueNumber(num: number) {
         <router-link to="/queue" class="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-semibold rounded-xl transition-all duration-300 text-sm flex items-center justify-center cursor-pointer">
           Lihat Riwayat
         </router-link>
+      </div>
+    </div>
+
+    <!-- Chart Card (Admin Only) -->
+    <div v-if="isAdmin" class="bg-[#111111] border border-white/5 rounded-2xl p-6 hover:border-orange-500/20 transition-all duration-300 mb-10">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+          </div>
+          <h3 class="text-white font-bold">Ringkasan Pendapatan Bulan Ini</h3>
+        </div>
+      </div>
+      <div class="h-[300px] w-full relative">
+        <Bar v-if="summary" :data="chartData" :options="chartOptions" />
+        <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm animate-pulse">
+          Memuat grafik...
+        </div>
       </div>
     </div>
 

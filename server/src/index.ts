@@ -4,6 +4,7 @@ import cors from 'cors'
 import authRoutes from './routes/auth.js'
 import catalogRoutes from './routes/catalog.js'
 import queueRoutes from './routes/queue.js'
+import financeRoutes from './routes/finance.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -23,6 +24,7 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/catalog', catalogRoutes)
 app.use('/api/queue', queueRoutes)
+app.use('/api/finance', financeRoutes)
 
 // Health check
 app.get('/api/health', (_req, res) => {
