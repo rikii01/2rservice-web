@@ -11,6 +11,7 @@ import CatalogPage from './views/CatalogPage.vue'
 import QueuePage from './views/QueuePage.vue'
 import AdminQueuePage from './views/AdminQueuePage.vue'
 import AdminFinancePage from './views/AdminFinancePage.vue'
+import ProfilePage from './views/ProfilePage.vue'
 import { useAuth } from './composables/useAuth'
 
 const router = createRouter({
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/dashboard', component: DashboardPage, name: 'dashboard' },
     { path: '/catalog', component: CatalogPage, name: 'catalog' },
     { path: '/queue', component: QueuePage, name: 'queue' },
+    { path: '/profile', component: ProfilePage, name: 'profile' },
     { path: '/admin/queues', component: AdminQueuePage, name: 'admin-queues' },
     { path: '/admin/finance', component: AdminFinancePage, name: 'admin-finance' },
   ],
@@ -36,7 +38,7 @@ const router = createRouter({
 // Navigation Guard
 router.beforeEach((to, from, next) => {
   const { isAuthenticated, isAdmin } = useAuth()
-  const protectedRoutes = ['dashboard', 'catalog', 'queue', 'admin-queues', 'admin-finance']
+  const protectedRoutes = ['dashboard', 'catalog', 'queue', 'profile', 'admin-queues', 'admin-finance']
 
   if (protectedRoutes.includes(to.name as string) && !isAuthenticated.value) {
     next({ name: 'login' })

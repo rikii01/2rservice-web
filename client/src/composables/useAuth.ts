@@ -107,6 +107,96 @@ export function useAuth() {
     }
   }
 
+  async function loginWithGoogle(idToken: string): Promise<{ success: boolean; error?: string }> {
+    isLoading.value = true
+    try {
+      const res = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        return { success: false, error: json.error || 'Login Google gagal.' }
+      }
+
+      token.value = json.token
+      user.value = json.user
+      localStorage.setItem('token', json.token)
+      localStorage.setItem('user', JSON.stringify(json.user))
+
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: 'Tidak dapat terhubung ke server.' }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updateProfile(data: {
+    nama: string
+    noHp: string
+    avatar?: string | null
+  }): Promise<{ success: boolean; error?: string }> {
+    isLoading.value = true
+    try {
+      const res = await fetch(`${API_URL}/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: JSON.stringify(data),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        return { success: false, error: json.error || 'Gagal memperbarui profil.' }
+      }
+
+      user.value = json.user
+      localStorage.setItem('user', JSON.stringify(json.user))
+
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: 'Tidak dapat terhubung ke server.' }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updatePassword(data: {
+    currentPassword: string
+    newPassword: string
+  }): Promise<{ success: boolean; error?: string }> {
+    isLoading.value = true
+    try {
+      const res = await fetch(`${API_URL}/auth/password`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: JSON.stringify(data),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        return { success: false, error: json.error || 'Gagal mengubah password.' }
+      }
+
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: 'Tidak dapat terhubung ke server.' }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   async function fetchMe(): Promise<void> {
     if (!token.value) return
     try {
@@ -141,6 +231,9 @@ export function useAuth() {
     isAdmin,
     register,
     login,
+    loginWithGoogle,
+    updateProfile,
+    updatePassword,
     logout,
     fetchMe,
   }

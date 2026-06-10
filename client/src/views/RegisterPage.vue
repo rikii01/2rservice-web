@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { register, isLoading } = useAuth()
+const { register, loginWithGoogle, isLoading } = useAuth()
 
 const nama = ref('')
 const email = ref('')
@@ -14,6 +14,43 @@ const confirmPassword = ref('')
 const showPassword = ref(false)
 const showConfirm = ref(false)
 const errorMsg = ref('')
+
+onMounted(() => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const google = (window as any).google
+  if (google && clientId) {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleCallback,
+    })
+
+    const btnContainer = document.getElementById('google-btn-register')
+    if (btnContainer) {
+      google.accounts.id.renderButton(
+        btnContainer,
+        {
+          theme: 'outline',
+          size: 'large',
+          width: btnContainer.clientWidth || 368,
+          text: 'signup_with',
+          shape: 'rectangular',
+          logo_alignment: 'left'
+        }
+      )
+    }
+  }
+})
+
+async function handleGoogleCallback(response: any) {
+  errorMsg.value = ''
+  const result = await loginWithGoogle(response.credential)
+
+  if (result.success) {
+    router.push('/dashboard')
+  } else {
+    errorMsg.value = result.error || 'Autentikasi Google gagal.'
+  }
+}
 
 async function handleRegister() {
   errorMsg.value = ''
@@ -197,6 +234,18 @@ async function handleRegister() {
               {{ isLoading ? 'Memproses...' : 'Daftar Sekarang' }}
             </button>
           </form>
+
+          <!-- Divider -->
+          <div class="my-6 flex items-center gap-4">
+            <div class="flex-1 h-px bg-white/5"></div>
+            <span class="text-xs text-gray-500 font-medium">atau</span>
+            <div class="flex-1 h-px bg-white/5"></div>
+          </div>
+
+          <!-- Google Sign Up -->
+          <div class="w-full flex justify-center min-h-[44px]">
+            <div id="google-btn-register" class="w-full"></div>
+          </div>
 
           <!-- Login Link -->
           <p class="mt-8 text-center text-sm text-gray-400">

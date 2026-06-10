@@ -98,3 +98,32 @@ export type CatalogItemInput = z.infer<typeof catalogItemSchema>
 export type CatalogUpdateInput = z.infer<typeof catalogUpdateSchema>
 export type QueueCreateInput = z.infer<typeof queueCreateSchema>
 export type QueueUpdateStatusInput = z.infer<typeof queueUpdateStatusSchema>
+
+export const updateProfileSchema = z.object({
+  nama: z
+    .string()
+    .min(2, 'Nama minimal 2 karakter')
+    .max(100, 'Nama maksimal 100 karakter'),
+  noHp: z
+    .string()
+    .min(8, 'Nomor HP minimal 8 digit')
+    .max(15, 'Nomor HP maksimal 15 digit'),
+  avatar: z
+    .string()
+    .url('Format URL avatar tidak valid')
+    .optional()
+    .nullable(),
+})
+
+export const updatePasswordSchema = z.object({
+  currentPassword: z
+    .string()
+    .min(1, 'Password saat ini harus diisi'),
+  newPassword: z
+    .string()
+    .min(6, 'Password baru minimal 6 karakter')
+    .max(100, 'Password baru maksimal 100 karakter'),
+})
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>
